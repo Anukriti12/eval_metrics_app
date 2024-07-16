@@ -165,25 +165,23 @@ with st.form('my_form'):
         st.warning('Please enter your Azure OpenAI API key and endpoint!', icon='⚠')
 
     gpt_response_button = st.form_submit_button('GPT4 generated simplified text')
+    response = ''
     if gpt_response_button and azure_openai_api_key and azure_openai_endpoint:
-        response = generate_response(final_input)
-        system = st.text_area('System Text:', response)
-    else:
-        system = st.text_area('System Text:', '')
+        st.session_state.response = generate_response(final_input)
+    
+    system = st.text_area('System Text:', st.session_state.get('response', '').replace('\n', ' '))
 
-    # system = st.text_area('System Text:', '')
     # This is Andy Arias. He is an actor and he speaks up for people\'s rights.
     
     uploaded_original = st.file_uploader("Upload Original Text File:", type=['txt'], key="original")
     uploaded_reference = st.file_uploader("Upload Reference Text File:", type=['txt'], key="reference")
     uploaded_system = st.file_uploader("Upload System Text File:", type=['txt'], key="system")
-    
-
     submitted = st.form_submit_button('Submit')
 
-if submitted:
+if submitted and 'response' in st.session_state:
+    response = st.session_state['response']
     # Handle file uploads or text area inputs
-
+    print(response)
     for text_input, uploaded_file, filename in [
         (original, uploaded_original, 'original.txt'),
         (reference, uploaded_reference, 'references.txt'),
@@ -196,6 +194,21 @@ if submitted:
             with open(filename, 'w') as f:
                 f.write(text_input)
     
+    def count_lines(filename):
+        with open(filename, 'r') as file:
+            line_count = sum(1 for line in file)
+        return line_count
+
+    file1, file2, file3 = 'original.txt', 'references.txt', 'simplified.txt'
+
+    n1,n2,n3 = str(count_lines(file1)), str(count_lines(file2)), str(count_lines(file3))
+    # st.text_area("Length", value=n1, height=150)
+    # st.text_area("Length2", value=n2, height=150)
+    # st.text_area("Length3", value=n3, height=150)
+    print(n1,n2,n3)
+    if not (n1==n2 and n2 ==n3):
+        st.error("Lengths of original, reference and simplified text should be equal !")
+
 
 
     if os.path.exists('references.txt') and os.path.exists('original.txt') and os.path.exists('simplified.txt'):
@@ -255,7 +268,7 @@ if submitted:
                     file_name="simplified.txt",
                     mime="text/txt"
                 )
-                
+    # delete all if exists!
     files_to_delete = ['original.txt', 'references.txt', 'simplified.txt']
 
     for file_name in files_to_delete:
@@ -265,4 +278,3 @@ if submitted:
         else:
             print(f"{file_name} does not exist and could not be deleted.")
 # easse report -t custom -m 'bleu,sari,fkgl,sent_bleu,f1_token,sari_legacy,sari_by_operation,bertscore' --orig_sents_path original.txt --refs_sents_paths references.txt -i simplified.txt -p report.html
-   
