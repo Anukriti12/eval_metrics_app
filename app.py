@@ -5,6 +5,7 @@ import ast
 from openai import AzureOpenAI
 
 def generate_response(input_text):
+
     client = AzureOpenAI(
         azure_endpoint=azure_openai_endpoint, 
         api_key=azure_openai_api_key,  
@@ -33,7 +34,7 @@ with st.form('my_form'):
 
     prompt = st.text_area('Existing Prompt:', 'Simplify the text following the general guidelines at plainlanguage.gov. Some of these guidelines are: Break up wordy sentences into multiple sentences. Present information at the 8th-grade level or below. Add structure such as useful headings, or lists to highlight steps or requirements, unless it will make the text much longer. Start each paragraph with a topic sentence. Consider who the reader is and speak directly to them. Avoid double negatives. Keep paragraphs short. Use examples to illustrate the text. Be concise.')
     # text = st.text_area('Enter input text for simplification:', original)
-    final_input = prompt + original
+    final_input = prompt + "\n\n" + original
 
     if not azure_openai_api_key or not azure_openai_endpoint:
         st.warning('Please enter your Azure OpenAI API key and endpoint!', icon='⚠')
@@ -52,16 +53,29 @@ with st.form('my_form'):
     uploaded_system = st.file_uploader("Upload System Text File:", type=['txt'], key="system")
     submitted = st.form_submit_button('Submit')
 
-if submitted and 'response' in st.session_state:
-    response = st.session_state['response']
-    # Handle file uploads or text area inputs
-    print(response)
+
+if submitted:
+    # and 'response' in st.session_state:
+    # response = st.session_state['response']
+    # print(response)
+    files_to_delete = ['original.txt', 'references.txt', 'simplified.txt']
+
+    for file_name in files_to_delete:
+        if os.path.exists(file_name):
+            os.remove(file_name)
+            print(f"Deleted {file_name}")
+        else:
+            print(f"{file_name} does not exist and could not be deleted.")
+
     for text_input, uploaded_file, filename in [
         (original, uploaded_original, 'original.txt'),
         (reference, uploaded_reference, 'references.txt'),
         (system, uploaded_system, 'simplified.txt')
     ]:
+        print(uploaded_file)
         if uploaded_file is not None:
+            print('yes....')
+
             with open(filename, 'wb') as f:
                 f.write(uploaded_file.getvalue())
         else:
@@ -85,7 +99,7 @@ if submitted and 'response' in st.session_state:
 
 
 
-    if os.path.exists('references.txt') and os.path.exists('original.txt') and os.path.exists('simplified.txt'):
+    if (n1==n2 and n2 ==n3):
         cmd = [
             'easse', 'evaluate', '-t', 'custom', '-m', 'bleu,sari,fkgl,sent_bleu,f1_token,sari_legacy,sari_by_operation', '-q',
             '--orig_sents_path', os.path.abspath('original.txt'),
@@ -127,29 +141,53 @@ if submitted and 'response' in st.session_state:
                         file_name="report.html",
                         mime="text/html"
                     )
-    elif not os.path.exists('simplified.txt'):
-        with open('original.txt', 'r') as original, open('simplified.txt', 'w') as simplified:
-            for line in original:
-                gpt_response = generate_response(line)
-                simplified.write(f"{gpt_response}")
-    elif os.path.exists('original.txt'):
+    elif n1 > n3:
+        print('hryyyyy')
         if os.path.exists('simplified.txt'):
-            with open('simplified.txt', 'rb') as file:
-                file_content = file.read()
-                btn = st.download_button(
-                    label="Download Simplified File",
-                    data=file_content,
-                    file_name="simplified.txt",
-                    mime="text/txt"
-                )
-    # delete all if exists!
-    files_to_delete = ['original.txt', 'references.txt', 'simplified.txt']
-
-    for file_name in files_to_delete:
-        if os.path.exists(file_name):
             os.remove(file_name)
             print(f"Deleted {file_name}")
         else:
             print(f"{file_name} does not exist and could not be deleted.")
+
+        with open('original.txt', 'r') as original:
+            i = 0
+            for line in original:
+                print(i)
+                print(prompt, line)
+                input = prompt + "\n\n" + line
+                gpt_response = (generate_response(input)).replace('\n', ' ')
+                print(gpt_response)
+                with open('simplified.txt', 'a') as simplified:
+                    simplified.write(f"{gpt_response}\n")
+                i=i+1
+
+        with open('simplified.txt', 'rb') as file:
+            file_content = file.read()
+            btn = st.download_button(
+                label="Download Simplified File",
+                data=file_content,
+                file_name="simplified.txt",
+                mime="text/plain"
+            )
+    # elif os.path.exists('original.txt'):
+    #     if os.path.exists('simplified.txt'):
+    #         with open('simplified.txt', 'rb') as file:
+    #             file_content = file.read()
+    #             btn = st.download_button(
+    #                 label="Download Simplified File",
+    #                 data=file_content,
+    #                 file_name="simplified.txt",
+    #                 mime="text/txt"
+    #             )
+    # delete all if exists!
+    # files_to_delete = ['original.txt', 'references.txt', 'simplified.txt']
+
+    # for file_name in files_to_delete:
+    #     if os.path.exists(file_name):
+    #         os.remove(file_name)
+    #         print(f"Deleted {file_name}")
+    #     else:
+    #         print(f"{file_name} does not exist and could not be deleted.")
+
 # easse report -t custom -m 'bleu,sari,fkgl,sent_bleu,f1_token,sari_legacy,sari_by_operation,bertscore' --orig_sents_path original.txt --refs_sents_paths references.txt -i simplified.txt -p report.html
    
