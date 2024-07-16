@@ -255,5 +255,14 @@ if submitted:
                     file_name="simplified.txt",
                     mime="text/txt"
                 )
+                
+    files_to_delete = ['original.txt', 'references.txt', 'simplified.txt']
+
+    for file_name in files_to_delete:
+        if os.path.exists(file_name):
+            os.remove(file_name)
+            print(f"Deleted {file_name}")
+        else:
+            print(f"{file_name} does not exist and could not be deleted.")
 # easse report -t custom -m 'bleu,sari,fkgl,sent_bleu,f1_token,sari_legacy,sari_by_operation,bertscore' --orig_sents_path original.txt --refs_sents_paths references.txt -i simplified.txt -p report.html
    
