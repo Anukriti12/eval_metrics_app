@@ -13,7 +13,7 @@ def generate_response(input_text):
     )
 
     response = client.chat.completions.create(
-        model="gpt-4",  # Use your deployment name here
+        model="gpt-4o",  # Use your deployment name here
         messages=[
             {"role": "system", "content": "You are a helpful assistant."},
             {"role": "user", "content": input_text}
@@ -31,8 +31,62 @@ with st.form('my_form'):
 
     original = st.text_area('Original Text:', 'This is actor advocate Andy Arias.')
     reference = st.text_area('Reference Text:', 'This is Andy Arias, I am an actor and advocate.')
+    prompt1 = '''
+		You are an expert in accessible communication, tasked with transforming complex text into clear, accessible plain language for individuals with Intellectual and Developmental Disabilities (IDD) or those requiring simplified content. Retain all essential information and intent while prioritizing readability, comprehension, and inclusivity.
 
-    prompt = st.text_area('Existing Prompt:', 'Simplify the text following the general guidelines at plainlanguage.gov. Some of these guidelines are: Break up wordy sentences into multiple sentences. Present information at the 8th-grade level or below. Add structure such as useful headings, or lists to highlight steps or requirements, unless it will make the text much longer. Start each paragraph with a topic sentence. Consider who the reader is and speak directly to them. Avoid double negatives. Keep paragraphs short. Use examples to illustrate the text. Be concise.')
+		Text simplification refers to rewriting or adapting text to make it easier to read and understand while keeping the same level of detail and precision. Make sure you focus on simplification and not summarization. The length of generated output text must be similar to that of input text.
+
+		Stick to the provided input text and only simplify the language. Don't provide the answer or hallucinate or provide any irrelevant information, not mentioned in the input text. 
+
+		Guidelines for Simplification:
+		Vocabulary and Terminology:
+		Replace uncommon, technical, or abstract words with simple, everyday language.
+		Define unavoidable complex terms in plain language within parentheses upon first use (example: “cardiologist (heart doctor)”).
+		Avoid idioms, metaphors, sarcasm, or culturally specific references.
+
+		Sentence Structure:
+		Use short sentences (10--15 words max). Break long sentences into 1–2 ideas each.
+		Prefer active voice (example: “The doctor examined the patient” vs. “The patient was examined by the doctor”).
+		Avoid nested clauses, passive voice, and ambiguous pronouns (example: “they,” “it”).
+
+		Clarity and Flow:
+		Organize content logically, using headings/subheadings to group related ideas.
+		Use bullet points or numbered lists for steps, options, or key points.
+		Ensure each paragraph focuses on one main idea.
+
+		Tone and Engagement:
+		Write in a neutral, conversational tone (avoid formal or academic language).
+		Address the reader directly with “you” or “we” where appropriate.
+		Use consistent terms for concepts (avoid synonyms that may confuse).
+
+		Avoid Exclusionary Elements:
+		Remove jargon, acronyms (unless defined), and expand abbreviations if needed (example: “ASAP” → “as soon as possible”).
+		Eliminate metaphors, idioms, or implied meanings (example: “hit the books” → “study”).
+		Avoid double negatives (example: “not uncommon” → “common”).
+
+		Structural Support:
+		Add clear headings to label sections (example: “How to Apply for Benefits”).
+		Use formatting tools like bold for key terms or warnings.
+		Chunk information into short paragraphs with line breaks for visual ease.
+
+		Inclusivity Checks:
+		Ensure content is free of bias, stereotypes, or assumptions about the reader.
+		Use gender-neutral language (example: “they” instead of “he/she”).
+
+
+		Output Requirements:
+		Return only the simplified text, without markdown, emojis, or images.
+		Preserve original context, facts, and intent. Do not omit critical details.
+		Prioritize clarity over brevity; focus on simplification and not summarization. The length of generated output text should be same or similar to that of input text.
+		Do not simplify already simple text.
+
+		Example Transformation:
+		Original: “Individuals experiencing adverse climatic conditions may necessitate relocation to mitigate health risks.”
+		Simplified: “If weather conditions become dangerous, people might need to move to stay safe.”
+
+		For the provided input text, apply the above guidelines rigorously. Ensure the output is accessible to readers with varied cognitive abilities, emphasizing clarity, simplicity, and logical structure. Verify that the simplified text aligns with plain language standards like WCAG and PlainLanguage.gov.
+'''
+    prompt = st.text_area('Existing Prompt:', prompt1)
     # text = st.text_area('Enter input text for simplification:', original)
     final_input = prompt + "\n\n" + original
 
@@ -72,15 +126,28 @@ if submitted:
         (reference, uploaded_reference, 'references.txt'),
         (system, uploaded_system, 'simplified.txt')
     ]:
-        print(uploaded_file)
-        if uploaded_file is not None:
-            print('yes....')
+            if uploaded_file is not None:
+                with open(filename, 'wb') as f:
+                    f.write(uploaded_file.getvalue())
+            else:
+                with open(filename, 'w') as f:
+                    single_line = ' '.join(text_input.strip().splitlines()).strip()
+                    f.write(single_line + '\n')  # Ensures each is a single line
 
-            with open(filename, 'wb') as f:
-                f.write(uploaded_file.getvalue())
-        else:
-            with open(filename, 'w') as f:
-                f.write(text_input)
+    # for text_input, uploaded_file, filename in [
+    #     (original, uploaded_original, 'original.txt'),
+    #     (reference, uploaded_reference, 'references.txt'),
+    #     (system, uploaded_system, 'simplified.txt')
+    # ]:
+    #     print(uploaded_file)
+    #     if uploaded_file is not None:
+    #         print('yes....')
+
+    #         with open(filename, 'wb') as f:
+    #             f.write(uploaded_file.getvalue())
+    #     else:
+    #         with open(filename, 'w') as f:
+    #             f.write(text_input)
     
     def count_lines(filename):
         with open(filename, 'r') as file:
